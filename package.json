@@ -1,0 +1,25 @@
+{
+  "name": "kvman",
+  "version": "1.0.0",
+  "description": "Simple key-value manager",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "npm run build && ./bin/kvman",
+    "build": "node build.js && chmod a+x bin/kvman",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/syddye/kvman.git"
+  },
+  "author": "Vladyslav Sydorenko",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/syddye/kvman/issues"
+  },
+  "homepage": "https://github.com/syddye/kvman#readme",
+  "devDependencies": {
+    "esbuild": "^0.25.5"
+  }
+}
