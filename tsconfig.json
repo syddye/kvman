@@ -1,9 +1,10 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
         "checkJs": true,
         "allowJs": true,
         "noEmit": true,
         "strict": true
     },
-    "include": ["./*"]
+    "include": ["./*",],
 }

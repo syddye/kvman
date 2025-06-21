@@ -1,3 +1,14 @@
+import * as readline from 'node:readline/promises';
+
+import { sendKeyStrokesImmediately } from 'src/utils';
+
+/**
+ * @typedef {Object} Item
+ * @property {string} key - new key
+ * @property {string} value - new value
+ * @property {boolean} isObject - whether the new value is object
+ */
+
 /** @class */
 export class Menu {
     /** @type {string[]} */
@@ -33,6 +44,21 @@ export class Menu {
     /** @returns {string} */
     select() {
         return this.items[this.selected];
+    }
+
+    /** @returns {Promise<Item>} */
+    async readNewItem() {
+        this.clear();
+        
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const key = await rl.question('Key (new_key): ');
+        const value = await rl.question('Value ({}): ');
+        rl.close();
+
+        process.stdin.resume();
+        sendKeyStrokesImmediately(true);
+
+        return { key, value, isObject: !value };
     }
 
     /** @returns {void} */

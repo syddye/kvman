@@ -2,6 +2,10 @@ import * as path from 'path';
 import * as os from 'node:os';
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 
+/**
+ * @typedef {import('src/menu.js').Item} Item
+ */
+
 /** @class */
 export class Storage {
     /** @type {string[]} */
@@ -16,7 +20,8 @@ export class Storage {
             mkdirSync(this.storageDir);
             this.save();
         }
-        this.storage = JSON.parse(readFileSync(this.storageFile, { encoding: 'utf8' }));
+        const data = readFileSync(this.storageFile, { encoding: 'utf8' });
+        this.storage = data ? JSON.parse(data) : {};
     }
 
     save() {
@@ -30,5 +35,24 @@ export class Storage {
             current = this.storage[key];
         }
         return choices;
+    }
+
+    /**
+     * 
+     * @param {Item} item 
+     * @returns {void}
+     */
+    append({ key, value, isObject }) {
+        this.storage[key] = isObject ? {} : value;
+        this.save();
+        return;
+    }
+
+    /**
+     * @param {string} key
+     * @param {any} value
+     */
+    set(key, value) {
+        this.storage[key] = value;
     }
 }

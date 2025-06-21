@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "npm run build && ./bin/kvman",
-    "build": "node build.js && chmod a+x bin/kvman",
+    "build": "node build && chmod a+x bin/kvman",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
