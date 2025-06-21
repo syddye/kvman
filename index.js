@@ -1,8 +1,9 @@
-import options from './options.json' with { type: 'json' };
+import { Storage } from './storage.js';
 import { setup, render, exit } from './util.js';
 
 let selected = 0;
-let choices = Object.keys(options);
+const storage = new Storage();
+let choices = storage.keys();
 
 process.stdin.on('keypress', (_, key) => {
     if (key.name === 'up') {
