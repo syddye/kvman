@@ -1,4 +1,4 @@
-import readline from 'readline';
+import * as readline from 'readline';
 
 export function setup() {
     /* Stdin stream starts emitting keypress events */
@@ -7,6 +7,11 @@ export function setup() {
     process.stdin.setRawMode(true);
 }
 
+/** 
+ * @param {number} selected 
+ * @param {string[]} choices
+ * @returns {void}
+ */
 export function render(selected, choices) {
     clear();
     console.log('Use ↑ ↓ to navigate and press Enter to select:\n');

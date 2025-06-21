@@ -1,4 +1,4 @@
-import esbuild from 'esbuild';
+import * as esbuild from 'esbuild';
 
 esbuild.build({
     entryPoints: ['index.js'],

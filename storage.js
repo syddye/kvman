@@ -1,9 +1,12 @@
-import path from 'path';
-import os from 'node:os';
+import * as path from 'path';
+import * as os from 'node:os';
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 
+/** @class */
 export class Storage {
+    /** @type {string[]} */
     path = [];
+    /** @type {Record<string, any>} */
     storage = {};
     storageDir = path.join(os.homedir(), '.kvman');
     storageFile = path.join(this.storageDir, 'storage.json');
