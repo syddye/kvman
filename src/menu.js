@@ -3,6 +3,10 @@ import * as readline from 'node:readline/promises';
 import { sendKeyStrokesImmediately } from 'src/utils';
 
 /**
+ * @typedef {import('src/event-bus').EventBus} EventBus
+ */
+
+/**
  * @typedef {Object} Item
  * @property {string} key - new key
  * @property {string} value - new value
@@ -15,9 +19,24 @@ export class Menu {
     items = []
     selected = 0;
 
-    /** @param {string[]} items */
-    constructor(items) {
-        this.items = items;
+    /** 
+     * @param {EventBus} eventBus
+     */
+    constructor(eventBus) {
+        this._eventBus = eventBus;
+
+        this._eventBus.on('movedUp', () => {
+            this.up();
+            this.render();
+        });
+        this._eventBus.on('movedDown', () => {
+            this.down();
+            this.render();
+        });
+        this._eventBus.on('itemsUpdated', (items) => {
+            this.setItems(items);
+            this.render();
+        });
     }
 
     /**
@@ -46,25 +65,9 @@ export class Menu {
         return this.items[this.selected];
     }
 
-    /** @returns {Promise<Item>} */
-    async readNewItem() {
-        this.clear();
-        
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        const key = await rl.question('Key (new_key): ');
-        const value = await rl.question('Value ({}): ');
-        rl.close();
-
-        process.stdin.resume();
-        sendKeyStrokesImmediately(true);
-
-        return { key, value, isObject: !value };
-    }
-
     /** @returns {void} */
     render() {
-        this.clear();
-
+        console.clear();
         console.log('Use ↑ ↓ to navigate and press Enter to select:\n');
 
         for (let i = 0; i < this.items.length; i++) {
@@ -75,16 +78,6 @@ export class Menu {
             }
             console.log(`  ${i + 1}. ${this.items[i]}`);
         }
-        /* Hide cursor */
-        process.stdout.write('\x1b[?25l');
+        
     };
-
-
-    /** @returns {void} */
-    clear() {
-        /* Clear screen */
-        console.clear();
-        /* Show cursor */
-        process.stdout.write('\x1b[?25h');
-    }
 }
