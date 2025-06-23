@@ -1,16 +1,13 @@
-import * as readline from 'node:readline/promises';
-
-import { sendKeyStrokesImmediately } from 'src/utils';
-
 /**
  * @typedef {import('src/event-bus').EventBus} EventBus
  */
 
+import { EventPrefix } from 'src/constants';
+
 /**
  * @typedef {Object} Item
- * @property {string} key - new key
- * @property {string} value - new value
- * @property {boolean} isObject - whether the new value is object
+ * @property {string} name - Item's name
+ * @property {boolean} isSelected - Whether the item is selected
  */
 
 /** @class */
@@ -25,17 +22,11 @@ export class Menu {
     constructor(eventBus) {
         this._eventBus = eventBus;
 
-        this._eventBus.on('movedUp', () => {
-            this.up();
-            this.render();
+        this._eventBus.on(`${EventPrefix.STORAGE}:renderCommand`, (items) => {
+            this.render(items);
         });
-        this._eventBus.on('movedDown', () => {
-            this.down();
-            this.render();
-        });
-        this._eventBus.on('itemsUpdated', (items) => {
-            this.setItems(items);
-            this.render();
+        this._eventBus.on('select', () => {
+            this._eventBus.emit('itemSelected', this.select());
         });
     }
 
@@ -65,19 +56,34 @@ export class Menu {
         return this.items[this.selected];
     }
 
-    /** @returns {void} */
-    render() {
+    /**
+     * @param {Item[]} items 
+     * @returns {void} 
+     */
+    render(items) {
         console.clear();
+        this._showCursor(false);
         console.log('Use ↑ ↓ to navigate and press Enter to select:\n');
-
-        for (let i = 0; i < this.items.length; i++) {
-            if (i === this.selected) {
+        for (let i = 0; i < items.length; i++) {
+            const { name, isSelected } = items[i];
+            if (isSelected) {
                 /* Highlight selected option */
-                console.log(`> \x1b[36m${i + 1}. ${this.items[i]}\x1b[0m`);
+                console.log(`> \x1b[36m${i + 1}. ${name}\x1b[0m`);
                 continue;
             }
-            console.log(`  ${i + 1}. ${this.items[i]}`);
+            console.log(`  ${i + 1}. ${name}`);
         }
         
     };
+
+    /**
+     * Hides/shows cursor
+     * @private
+     * @param {boolean} yesNo
+     * @returns {void}
+     */
+    _showCursor(yesNo) {
+        const cursor = yesNo ? '\x1b[?25h' : '\x1b[?25l'
+        console.log(cursor);
+    }
 }
