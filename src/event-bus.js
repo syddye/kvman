@@ -1,8 +1,11 @@
 import { EventEmitter } from 'node:events';
 import { emitKeypressEvents } from 'node:readline';
-import * as readline from 'node:readline/promises';
 
 import { EventPrefix } from 'src/constants';
+
+/**
+ * @typedef {import('src/key-handler-locker').KeyHandlerLocker} KeyHandlerLocker
+ */
 
 /**
  * @typedef {Object} Item
@@ -13,14 +16,11 @@ import { EventPrefix } from 'src/constants';
 
 /** @class */
 export class EventBus extends EventEmitter {
-    /** 
-     * @private
-     * @type {boolean}
-     */
-    _isLocked = false;
-
-    constructor() {
+    /** @param {KeyHandlerLocker} locker */
+    constructor(locker) {
         super();
+
+        this.locker = locker;
         /* Stdin stream starts emitting keypress events */
         emitKeypressEvents(process.stdin);
         this._sendKeyStrokesImmediately(true);
@@ -33,7 +33,7 @@ export class EventBus extends EventEmitter {
                 this.emit(`${EventPrefix.EVENT_BUS}:exitCommand`);
                 return;
             }
-            if (this._isLocked) return;
+            if (this.locker.isLocked()) return;
 
             /* Navigation */
             if (key.name === 'up') {
@@ -54,18 +54,7 @@ export class EventBus extends EventEmitter {
             }
 
             if (key.name === 'a') {
-                this._isLocked = true;
-                
-                const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-                const key = await rl.question('Key (new_key): ');
-                const value = await rl.question('Value ({}): ');
-                this.emit('append', { key, value, isObject: !value });
-                rl.close();
-
-                process.stdin.resume();
-                this._sendKeyStrokesImmediately(true);
-
-                this._isLocked = false;
+                this.emit(`${EventPrefix.EVENT_BUS}:appendItemCommand`);
                 return;
             }
         });
@@ -74,6 +63,12 @@ export class EventBus extends EventEmitter {
             this._sendKeyStrokesImmediately(false);
             process.exit();
         });
+
+        this.on(`${EventPrefix.MENU}:itemCreatedEvent`, (item) => {
+            process.stdin.resume();
+            this._sendKeyStrokesImmediately(true);
+            this.emit(`${EventPrefix.EVENT_BUS}:itemCreatedEvent`, item);
+        })
     }
 
     /**

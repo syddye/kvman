@@ -4,8 +4,14 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { EventPrefix } from './constants';
 
 /**
- * @typedef {import('src/menu.js').Item} Item
  * @typedef {import('src/event-bus').EventBus} EventBus
+ */
+
+/**
+ * @typedef {Object} Item
+ * @property {string} key - Item's key
+ * @property {string} value - Item's value
+ * @property {boolean} isObject - Whether the value is object
  */
 
 /** @class */
@@ -30,35 +36,21 @@ export class Storage {
      * @param {EventBus} eventBus
      */
     constructor(eventBus) {
+        this._eventBus = eventBus;
+        
         // Load storage
         this.initialize();
         this.storage = this.load();
         this._current = this.storage;
-        
-        this._eventBus = eventBus;
 
         /* Navigation */
         this._eventBus.on(`${EventPrefix.EVENT_BUS}:moveUpCommand`, () => this.moveUp());
         this._eventBus.on(`${EventPrefix.EVENT_BUS}:moveDownCommand`, () => this.moveDown());
         this._eventBus.on(`${EventPrefix.EVENT_BUS}:goIntoCommand`, () => this.goInto());
         this._eventBus.on(`${EventPrefix.EVENT_BUS}:goBackCommand`, () => this.goBack());
-        
-        
-        this._eventBus.on('append', (item) => {
-            // Early return if current element is a value
-            if (this._isValue()) return;
-            
-            this.append(item);
-            this._eventBus.emit('render', this.list());
-        });
-        this._eventBus.on('itemSelected', (item) => {
-            // Early return if current element is a value
-            if (this._isValue()) return;
-            
-            this.path.push(item);
-            this._navigate();
-            this._eventBus.emit('render', this.list());
-        });
+
+        this._eventBus.on(`${EventPrefix.EVENT_BUS}:appendItemCommand`, () => this.append());
+        this._eventBus.on(`${EventPrefix.EVENT_BUS}:itemCreatedEvent`, (item) => this.create(item));
 
         this._eventBus.on(`${EventPrefix.EVENT_BUS}:exitCommand`, () => {
             this.save();
@@ -84,7 +76,7 @@ export class Storage {
     }
 
     save() {
-        writeFileSync(this.storageFile, JSON.stringify(this.storage), { encoding: 'utf8' });
+        writeFileSync(this.storageFile, JSON.stringify(this.storage, null, 4), { encoding: 'utf8' });
     }
 
     load() {
@@ -136,9 +128,9 @@ export class Storage {
     }
 
     goBack() {
-        const previous = this.path.pop(); 
+        const previous = this.path.pop();
         if (!previous) return;
-        
+
         this.selected = previous;
         this._current = this.storage;
         for (const key of this.path) {
@@ -162,14 +154,29 @@ export class Storage {
         return this._isValue() ? [this._current] : Object.keys(this._current);
     }
 
-    /** 
-     * @param {Item} item 
-     * @returns {void}
-     */
-    append(item) {
+    /** @param {Item} item */
+    create({ key, value, isObject }) {
         // @ts-ignore
         this._current[key] = isObject ? {} : value;
         this.save();
+
+        const keys = Object.keys(this._current);
+        const selectedIndex = keys.indexOf(key);
+
+        const items = [];
+        for (let i = 0; i < keys.length; i++) {
+            items.push({ name: keys[i], isSelected: i === selectedIndex });
+        }
+        this.selected = keys[selectedIndex];
+
+        this._eventBus.emit(`${EventPrefix.STORAGE}:renderCommand`, items);
+    }
+
+    append() {
+        if (this._isValue()) {
+            return;
+        };
+        this._eventBus.emit(`${EventPrefix.STORAGE}:appendItemCommand`);
     }
 
     _navigate() {
