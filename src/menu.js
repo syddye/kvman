@@ -25,35 +25,12 @@ export class Menu {
         this._eventBus.on(`${EventPrefix.STORAGE}:renderCommand`, (items) => {
             this.render(items);
         });
-        this._eventBus.on('select', () => {
-            this._eventBus.emit('itemSelected', this.select());
+
+        this._eventBus.on(`${EventPrefix.STORAGE}:exitCommand`, () => {
+            console.clear();
+            this._showCursor(true);
+            this._eventBus.emit(`${EventPrefix.MENU}:exitCommand`);
         });
-    }
-
-    /**
-     * @param {string[]} items
-     * @returns {void} 
-     */
-    setItems(items) {
-        this.items = items;
-        this.selected = 0;
-    }
-
-    /** @returns {void} */
-    up() {
-        if (this.selected === 0) return;
-        this.selected--;
-    }
-
-    /** @returns {void} */
-    down() {
-        if (this.selected === this.items.length - 1) return;
-        this.selected++;
-    }
-
-    /** @returns {string} */
-    select() {
-        return this.items[this.selected];
     }
 
     /**

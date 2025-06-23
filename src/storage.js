@@ -22,12 +22,6 @@ export class Storage {
 
     /** 
      * @private
-     * @readonly
-     */
-    _previous = Symbol('previous');
-
-    /** 
-     * @private
      * @type {Record<string, any> | string}
      */
     _current = {};
@@ -42,15 +36,21 @@ export class Storage {
         this._current = this.storage;
         
         this._eventBus = eventBus;
+
+        /* Navigation */
         this._eventBus.on(`${EventPrefix.EVENT_BUS}:moveUpCommand`, () => this.moveUp());
         this._eventBus.on(`${EventPrefix.EVENT_BUS}:moveDownCommand`, () => this.moveDown());
+        this._eventBus.on(`${EventPrefix.EVENT_BUS}:goIntoCommand`, () => this.goInto());
+        this._eventBus.on(`${EventPrefix.EVENT_BUS}:goBackCommand`, () => this.goBack());
+        
+        
         this._eventBus.on('append', (item) => {
             // Early return if current element is a value
             if (this._isValue()) return;
             
             this.append(item);
             this._eventBus.emit('render', this.list());
-        })
+        });
         this._eventBus.on('itemSelected', (item) => {
             // Early return if current element is a value
             if (this._isValue()) return;
@@ -58,7 +58,12 @@ export class Storage {
             this.path.push(item);
             this._navigate();
             this._eventBus.emit('render', this.list());
-        })
+        });
+
+        this._eventBus.on(`${EventPrefix.EVENT_BUS}:exitCommand`, () => {
+            this.save();
+            this._eventBus.emit(`${EventPrefix.STORAGE}:exitCommand`);
+        });
     }
 
     run() {
@@ -112,6 +117,40 @@ export class Storage {
             items.push({ name: keys[i], isSelected: i === selectedIndex + 1 });
         }
         this.selected = keys[selectedIndex + 1];
+        this._eventBus.emit(`${EventPrefix.STORAGE}:renderCommand`, items);
+    }
+
+    goInto() {
+        if (typeof this._current === 'string') return;
+        this._current = this._current[this.selected];
+        const keys = typeof this._current === 'string' ? [this._current] : Object.keys(this._current);
+
+        const items = [];
+        for (let i = 0; i < keys.length; i++) {
+            items.push({ name: keys[i], isSelected: i === 0 });
+        }
+
+        this.path.push(this.selected);
+        this.selected = keys[0];
+        this._eventBus.emit(`${EventPrefix.STORAGE}:renderCommand`, items);
+    }
+
+    goBack() {
+        const previous = this.path.pop(); 
+        if (!previous) return;
+        
+        this.selected = previous;
+        this._current = this.storage;
+        for (const key of this.path) {
+            // @ts-ignore
+            this._current = this._current[key]
+        }
+
+        const items = [];
+        const keys = Object.keys(this._current);
+        for (let i = 0; i < keys.length; i++) {
+            items.push({ name: keys[i], isSelected: i === keys.indexOf(this.selected) });
+        }
         this._eventBus.emit(`${EventPrefix.STORAGE}:renderCommand`, items);
     }
 

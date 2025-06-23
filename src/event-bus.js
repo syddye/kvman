@@ -28,12 +28,14 @@ export class EventBus extends EventEmitter {
 
     listen() {
         process.stdin.on('keypress', async (_, key) => {
+            /* Program exit  */
             if (key.ctrl && key.name === 'c') {
-                this._sendKeyStrokesImmediately(false);
-                process.exit();
+                this.emit(`${EventPrefix.EVENT_BUS}:exitCommand`);
+                return;
             }
             if (this._isLocked) return;
 
+            /* Navigation */
             if (key.name === 'up') {
                 this.emit(`${EventPrefix.EVENT_BUS}:moveUpCommand`);
                 return;
@@ -42,9 +44,17 @@ export class EventBus extends EventEmitter {
                 this.emit(`${EventPrefix.EVENT_BUS}:moveDownCommand`);
                 return;
             }
+            if (key.name === 'return') {
+                this.emit(`${EventPrefix.EVENT_BUS}:goIntoCommand`);
+                return;
+            }
+            if (key.name === 'backspace') {
+                this.emit(`${EventPrefix.EVENT_BUS}:goBackCommand`);
+                return;
+            }
+
             if (key.name === 'a') {
                 this._isLocked = true;
-
                 
                 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
                 const key = await rl.question('Key (new_key): ');
@@ -58,10 +68,11 @@ export class EventBus extends EventEmitter {
                 this._isLocked = false;
                 return;
             }
-            if (key.name === 'return') {
-                this.emit(`${EventPrefix.EVENT_BUS}:selectItemCommand`);
-                return;
-            }
+        });
+
+        this.on(`${EventPrefix.MENU}:exitCommand`, () => {
+            this._sendKeyStrokesImmediately(false);
+            process.exit();
         });
     }
 
